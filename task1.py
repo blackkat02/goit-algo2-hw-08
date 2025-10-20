@@ -94,13 +94,10 @@ class LRUCache:
 
 
 def range_sum_no_cache(array: List[int], left: int, right: int) -> int:
-    """Обчислює суму елементів array[left : right + 1] без кешування."""
-    # Пряме обчислення суми Python
     return sum(array[left : right + 1])
 
 
 def update_no_cache(array: List[int], index: int, value: int):
-    """Оновлює елемент масиву без кешування."""
     array[index] = value
 
 
@@ -109,19 +106,15 @@ cache_instance = LRUCache(LRU_CAPACITY)
 
 
 def range_sum_with_cache(array: List[int], left: int, right: int) -> int:
-    """Обчислює суму з використанням LRU-кешу."""
     key = (left, right)
 
-    # 1. Спроба отримати з кешу (Cache Hit)
     result = cache_instance.get(key)
 
     if result != -1:
-        return result  # Cache Hit
+        return result
 
-    # 2. Cache Miss: Обчислення
     calculated_sum = sum(array[left : right + 1])
 
-    # 3. Збереження в кеш
     cache_instance.put(key, calculated_sum)
 
     return calculated_sum
@@ -130,10 +123,8 @@ def range_sum_with_cache(array: List[int], left: int, right: int) -> int:
 def update_with_cache(array: List[int], index: int, value: int):
     """Оновлює масив та інвалідує кеш."""
 
-    # 1. Оновлення основного масиву
     array[index] = value
 
-    # 2. Інвалідація кешу: видалення всіх діапазонів, що містять змінений індекс
     cache_instance.invalidate_by_index(index)
 
 
@@ -195,10 +186,8 @@ if __name__ == "__main__":
     N = 100_000
     Q = 50_000
 
-    # Створення початкового масиву (строго додатні цілі числа)
     initial_array = [random.randint(1, 100) for _ in range(N)]
 
-    # Генерація запитів
     all_queries = make_queries(N, Q)
 
     # --- ТЕСТ 1: БЕЗ КЕШУВАННЯ ---
