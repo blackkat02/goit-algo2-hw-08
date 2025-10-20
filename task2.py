@@ -16,13 +16,18 @@ class SlidingWindowRateLimiter:
         if user_id not in user_requests:
             return
 
-        while (
-            len(user_requests[user_id]) > 0
-            and user_requests[user_id][0] >= time.time() + current_time
+        while user_requests[user_id] and user_requests[user_id][0] <= (
+            time.time() - current_time
         ):
-            self.requests_queue.popleft
+            # if user_requests[user_id][0] <= time.time() - current_time:
+            # print(user_requests[user_id], time.time() - current_time, 24)
+            user_requests[user_id].popleft()
+            # self.requests_queue.popleft()
+            # else:
+            #     break
 
         if len(user_requests[user_id]) == 0:
+            print("del")
             del user_requests[user_id]
 
     def can_send_message(self, user_id: str) -> bool:
@@ -43,16 +48,16 @@ class SlidingWindowRateLimiter:
         else:
             start_time = time.time()
             user_requests.setdefault(user_id, deque()).append(start_time)
-            print(user_requests, self.requests_queue)
+            # print(user_requests, user_requests[user_id])
             return True
 
     def time_until_next_allowed(self, user_id: str) -> float:
         if (
             user_id in user_requests
-            and (user_requests[user_id][0] + self.max_requests) >= time.time()
+            and (user_requests[user_id][0] + self.max_requests) <= time.time()
         ):
-            end_time = user_requests[user_id][0] + self.max_requests
-            res = end_time - time.time()
+            # end_time = user_requests[user_id][0] + self.max_requests
+            res = time.time() - user_requests[user_id][0]
             return res
         else:
             return 0
