@@ -1,7 +1,6 @@
 import random
-from typing import Dict, Any, Deque
 import time
-from collections import defaultdict, deque
+from collections import deque
 
 user_requests = {}
 
@@ -10,57 +9,45 @@ class SlidingWindowRateLimiter:
     def __init__(self, window_size: int = 10, max_requests: int = 1):
         self.window_size = window_size
         self.max_requests = max_requests
-        self.requests_queue = deque([])
+        self.user_requests = {}
 
     def _cleanup_window(self, user_id: str, current_time: float) -> None:
-        if user_id not in user_requests:
+        if user_id not in self.user_requests:
             return
 
-        while user_requests[user_id] and user_requests[user_id][0] <= (
-            time.time() - current_time
+        while self.user_requests[user_id] and (
+            self.user_requests[user_id][0] <= (current_time - self.window_size)
         ):
-            # if user_requests[user_id][0] <= time.time() - current_time:
-            # print(user_requests[user_id], time.time() - current_time, 24)
-            user_requests[user_id].popleft()
-            # self.requests_queue.popleft()
-            # else:
-            #     break
+            self.user_requests[user_id].popleft()
 
-        if len(user_requests[user_id]) == 0:
+        if len(self.user_requests[user_id]) == 0:
             print("del")
-            del user_requests[user_id]
+            del self.user_requests[user_id]
 
     def can_send_message(self, user_id: str) -> bool:
-        print(user_id, "стоп")
-        return False
+        if (
+            user_id in self.user_requests
+            and len(self.user_requests[user_id]) >= self.max_requests
+        ):
+            print(f"Stop message from user: {user_id}")
+            return False
+        return True
 
     def record_message(self, user_id: str) -> bool:
-        self._cleanup_window(user_id, self.window_size)
-        if (
-            user_id in user_requests
-            and len(user_requests[user_id]) >= self.max_requests
-        ):
-
-            # if user_requests[user_id] >= self.max_requests:
-            self.can_send_message(user_id)
+        start_time = time.time()
+        self._cleanup_window(user_id, start_time)
+        if not self.can_send_message(user_id):
             return False
-
         else:
-            start_time = time.time()
-            user_requests.setdefault(user_id, deque()).append(start_time)
-            # print(user_requests, user_requests[user_id])
+            self.user_requests.setdefault(user_id, deque()).append(start_time)
             return True
 
     def time_until_next_allowed(self, user_id: str) -> float:
-        if (
-            user_id in user_requests
-            and (user_requests[user_id][0] + self.max_requests) <= time.time()
+        if user_id in self.user_requests and (
+            self.user_requests[user_id][0] <= time.time() + self.window_size
         ):
-            # end_time = user_requests[user_id][0] + self.max_requests
-            res = time.time() - user_requests[user_id][0]
+            res = self.user_requests[user_id][0] - time.time() + self.window_size
             return res
-        else:
-            return 0
 
 
 # Демонстрація роботи
